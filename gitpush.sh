@@ -1,44 +1,69 @@
 #!/bin/bash
 
-# User credentials
-GIT_EMAIL="you_github_mail"
-GIT_PASSWORD="you_github_password"
-
-# Set up Git global config with your email
-git config --global user.email "$GIT_EMAIL"
-
-# Prompt for the folder or file to upload
-read -p "Enter the folder or file path you want to upload: " FOLDER_PATH
-
-# Change to the specified folder
-if [ -d "$FOLDER_PATH" ] || [ -f "$FOLDER_PATH" ]; then
-    cd "$FOLDER_PATH"
-else
-    echo "Invalid folder or file path."
+# Function to handle errors and exit script
+handle_error() {
+    echo "Error: $1"
     exit 1
+}
+
+# Prompt for GitHub token
+read -p "Enter your GITHUB_TOKEN: " GITHUB_TOKEN
+if [[ -z "$GITHUB_TOKEN" ]]; then
+    handle_error "GITHUB_TOKEN is required."
 fi
 
 # Prompt for GitHub username and repository name
 read -p "Enter your GitHub username: " GITHUB_USER
-read -p "Enter the repository name: " REPO_NAME
-
-# Initialize git if not already done
-if [ ! -d .git ]; then
-    git init
+if [[ -z "$GITHUB_USER" ]]; then
+    handle_error "GitHub username is required."
 fi
 
-# Add all files to the git staging area
+read -p "Enter your GitHub repository name: " REPO_NAME
+if [[ -z "$REPO_NAME" ]]; then
+    handle_error "GitHub repository name is required."
+fi
+
+# Clone the repository
+echo "Cloning the repository from GitHub..."
+git clone https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${REPO_NAME}.git || handle_error "Failed to clone repository."
+
+cd ${REPO_NAME} || handle_error "Failed to change directory to repository."
+
+# Fetch the available branches
+echo "Fetching available branches..."
+git fetch --all || handle_error "Failed to fetch branches."
+
+# List and select a branch
+echo "Available branches:"
+git branch -r | sed 's/origin\///'
+read -p "Enter the branch name you want to use: " BRANCH_NAME
+
+# Checkout to the selected branch
+git checkout $BRANCH_NAME || handle_error "Failed to checkout to branch $BRANCH_NAME."
+
+# Pull the latest changes from the selected branch
+echo "Pulling latest changes from $BRANCH_NAME..."
+git pull origin $BRANCH_NAME || handle_error "Failed to pull the latest changes."
+
+# Prompt for file or folder to upload
+read -p "Enter the file or folder path you want to upload: " FILE_PATH
+if [[ ! -e "$FILE_PATH" ]]; then
+    handle_error "File or folder not found: $FILE_PATH"
+fi
+
+# Copy the file or folder to the repository
+echo "Copying $FILE_PATH to the repository directory..."
+cp -r $FILE_PATH ./ || handle_error "Failed to copy $FILE_PATH."
+
+# Add the file/folder to the git staging area
 git add .
 
 # Commit the changes
-git commit -m "Initial commit"
+read -p "Enter your commit message: " COMMIT_MESSAGE
+git commit -m "$COMMIT_MESSAGE" || handle_error "Failed to commit the changes."
 
-# Set the remote repository URL
-REMOTE_URL="https://$GITHUB_USER:$GIT_PASSWORD@github.com/$GITHUB_USER/$REPO_NAME.git"
-git remote add origin $REMOTE_URL
+# Push the changes to the selected branch
+echo "Pushing changes to GitHub..."
+git push origin $BRANCH_NAME || handle_error "Failed to push changes."
 
-# Push the code to GitHub
-git push -u origin master
-
-# Display the repository URL
-echo "Repository URL: https://github.com/$GITHUB_USER/$REPO_NAME"
+echo "Changes pushed successfully!"
