@@ -7,7 +7,7 @@ handle_error() {
 }
 
 # Configuration file path
-CONFIG_FILE="$HOME/.env_git"
+CONFIG_FILE="$HOME/.git_automation_config"
 
 # Load previous configuration if it exists
 if [[ -f $CONFIG_FILE ]]; then
@@ -28,7 +28,7 @@ else
     # Save the configuration to a file
     echo "GITHUB_TOKEN='$GITHUB_TOKEN'" > $CONFIG_FILE
     echo "GITHUB_USER='$GITHUB_USER'" >> $CONFIG_FILE
-    echo "Config saved .env_git"
+    echo "Configuration saved."
 fi
 
 # Use the loaded or saved configuration
@@ -67,11 +67,24 @@ git fetch --all || handle_error "Failed to fetch branches."
 
 # List and select a branch
 echo "Available branches:"
-git branch -r | sed 's/origin\///'
-read -p "Enter the branch name you want to use: " BRANCH_NAME
+AVAILABLE_BRANCHES=$(git branch -r | sed 's/origin\///')
+echo "$AVAILABLE_BRANCHES"
 
-# Checkout to the selected branch
-git checkout $BRANCH_NAME || handle_error "Failed to checkout to branch $BRANCH_NAME."
+if [[ -z "$AVAILABLE_BRANCHES" ]]; then
+    echo "No branches found. Creating a new 'main' branch."
+    git checkout -b main || handle_error "Failed to create new branch 'main'."
+    
+    # Create an initial commit in the new branch
+    touch README.md  # Create a README file
+    git add README.md || handle_error "Failed to stage README.md."
+    git commit -m "Initial commit" || handle_error "Failed to commit the changes."
+    
+    git push -u origin main || handle_error "Failed to push new branch 'main' to remote."
+else
+    read -p "Enter the branch name you want to use: " BRANCH_NAME
+    # Checkout to the selected branch
+    git checkout $BRANCH_NAME || handle_error "Failed to checkout to branch $BRANCH_NAME."
+fi
 
 # Pull the latest changes from the selected branch
 echo "Pulling latest changes from $BRANCH_NAME..."
@@ -83,9 +96,14 @@ if [[ ! -e "$FILE_PATH" ]]; then
     handle_error "File or folder not found: $FILE_PATH"
 fi
 
-# Copy the file or folder to the repository
-echo "Copying $FILE_PATH to the repository directory..."
-cp -r $FILE_PATH ./ || handle_error "Failed to copy $FILE_PATH."
+# Copy the content of the folder to the repository
+if [[ -d "$FILE_PATH" ]]; then
+    echo "Copying contents of the folder $FILE_PATH to the repository directory..."
+    cp -r $FILE_PATH/* ./ || handle_error "Failed to copy contents of the folder."
+else
+    echo "Copying file $FILE_PATH to the repository directory..."
+    cp "$FILE_PATH" ./ || handle_error "Failed to copy the file."
+fi
 
 # Add the file/folder to the git staging area
 git add .
