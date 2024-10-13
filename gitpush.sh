@@ -6,18 +6,36 @@ handle_error() {
     exit 1
 }
 
-# Prompt for GitHub token
-read -p "Enter your GITHUB_TOKEN: " GITHUB_TOKEN
-if [[ -z "$GITHUB_TOKEN" ]]; then
-    handle_error "GITHUB_TOKEN is required."
+# Configuration file path
+CONFIG_FILE="$HOME/.env_git"
+
+# Load previous configuration if it exists
+if [[ -f $CONFIG_FILE ]]; then
+    source $CONFIG_FILE
+else
+    # Prompt for GitHub token
+    read -p "Enter your GITHUB_TOKEN: " GITHUB_TOKEN
+    if [[ -z "$GITHUB_TOKEN" ]]; then
+        handle_error "GITHUB_TOKEN is required."
+    fi
+
+    # Prompt for GitHub username
+    read -p "Enter your GitHub username: " GITHUB_USER
+    if [[ -z "$GITHUB_USER" ]]; then
+        handle_error "GitHub username is required."
+    fi
+
+    # Save the configuration to a file
+    echo "GITHUB_TOKEN='$GITHUB_TOKEN'" > $CONFIG_FILE
+    echo "GITHUB_USER='$GITHUB_USER'" >> $CONFIG_FILE
+    echo "Config saved .env_git"
 fi
 
-# Prompt for GitHub username and repository name
-read -p "Enter your GitHub username: " GITHUB_USER
-if [[ -z "$GITHUB_USER" ]]; then
-    handle_error "GitHub username is required."
-fi
+# Use the loaded or saved configuration
+echo "Using GITHUB_TOKEN: $GITHUB_TOKEN"
+echo "Using GITHUB_USER: $GITHUB_USER"
 
+# Prompt for GitHub repository name
 read -p "Enter your GitHub repository name: " REPO_NAME
 if [[ -z "$REPO_NAME" ]]; then
     handle_error "GitHub repository name is required."
