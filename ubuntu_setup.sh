@@ -55,9 +55,10 @@ sudo add-apt-repository "deb [arch=amd64] https://packages.microsoft.com/repos/v
 sudo apt update
 sudo apt install -y code
 
-# Install Node.js and npm
-echo "Installing Node.js and npm..."
-sudo apt install -y nodejs npm
+# Install Node.js and npm (this may be redundant since it's already included above)
+# Uncomment if needed
+# echo "Installing Node.js and npm..."
+# sudo apt install -y nodejs npm
 
 # Install Yarn (Alternative to npm)
 echo "Installing Yarn..."
@@ -67,18 +68,12 @@ sudo apt update && sudo apt install -y yarn
 
 # Install Snap and some Snap apps
 echo "Installing Snap and common snap apps..."
+sudo apt install snapd -y
 sudo snap install discord
-
-# Install Atom Text Editor
-echo "Installing Atom text editor..."
-wget -qO - https://packagecloud.io/AtomEditor/atom/gpgkey | sudo apt-key add -
-sudo sh -c 'echo "deb [arch=amd64] https://packagecloud.io/AtomEditor/atom/any/ any main" > /etc/apt/sources.list.d/atom.list'
-sudo apt update
-sudo apt install -y atom
 
 # Install Chrome Stable
 echo "Installing Google Chrome..."
-wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+wget -q --show-progress --no-check-certificate https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
 sudo dpkg -i google-chrome-stable_current_amd64.deb
 sudo apt --fix-broken install -y  # Fix any dependency issues
 rm google-chrome-stable_current_amd64.deb
@@ -99,20 +94,9 @@ sudo ufw allow OpenSSH
 sudo ufw enable
 sudo ufw status
 
-# Install Google Cloud CLI
-echo "Installing Google Cloud CLI..."
-echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
-sudo apt-get install apt-transport-https ca-certificates gnupg -y
-curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-sudo apt-get update && sudo apt-get install google-cloud-sdk -y
-
 # Install Rust
 echo "Installing Rust programming language..."
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-
-# Install PostgreSQL
-echo "Installing PostgreSQL..."
-sudo apt install -y postgresql postgresql-contrib
 
 # Clean up
 echo "Cleaning up..."
