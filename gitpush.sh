@@ -23,9 +23,23 @@ if [[ -z "$REPO_NAME" ]]; then
     handle_error "GitHub repository name is required."
 fi
 
-# Clone the repository
-echo "Cloning the repository from GitHub..."
-git clone https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${REPO_NAME}.git || handle_error "Failed to clone repository."
+# Check if the repository directory already exists
+if [ -d "$REPO_NAME" ]; then
+    echo "The repository directory '$REPO_NAME' already exists."
+    read -p "Do you want to delete the existing directory and clone again? (y/n): " CONFIRM_DELETE
+    if [[ "$CONFIRM_DELETE" == "y" ]]; then
+        echo "Deleting existing directory..."
+        rm -rf $REPO_NAME || handle_error "Failed to delete existing directory."
+    else
+        echo "Skipping the clone step and using the existing directory."
+    fi
+fi
+
+# Clone the repository if the directory doesn't exist
+if [ ! -d "$REPO_NAME" ]; then
+    echo "Cloning the repository from GitHub..."
+    git clone https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${REPO_NAME}.git || handle_error "Failed to clone repository."
+fi
 
 cd ${REPO_NAME} || handle_error "Failed to change directory to repository."
 
