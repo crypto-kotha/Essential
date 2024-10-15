@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Function to install Docker if not installed
 if ! command -v docker &> /dev/null; then
     echo "Installing Docker..."
     sudo apt update -y && sudo apt upgrade -y
@@ -20,6 +21,7 @@ else
     echo "Docker is already installed."
 fi
 
+# Function to install Docker Compose if not installed
 if ! command -v docker-compose &> /dev/null; then
     echo "Installing Docker Compose..."
     sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
@@ -29,22 +31,26 @@ else
     echo "Docker Compose is already installed."
 fi
 
+# Get the server timezone, default to Asia/Jakarta if not found
 TIMEZONE=$(timedatectl | grep "Time zone" | awk '{print $3}')
 if [ -z "$TIMEZONE" ]; then
     TIMEZONE="Asia/Jakarta"
 fi
 echo "Server timezone detected: $TIMEZONE"
 
+# Generate random username and password
 CUSTOM_USER=$(openssl rand -hex 4)  
 PASSWORD=$(openssl rand -hex 12)    
 echo "Generated username: $CUSTOM_USER"
 echo "Generated password: $PASSWORD"
 
+# Setting up Chromium with Docker Compose and KasmVNC for browser-based access
 echo "Setting up Chromium with Docker Compose..."
 mkdir -p $HOME/chromium && cd $HOME/chromium
 
 cat <<EOF > docker-compose.yaml
 ---
+version: "3.8"
 services:
   chromium:
     image: lscr.io/linuxserver/chromium:latest
@@ -52,8 +58,6 @@ services:
     security_opt:
       - seccomp:unconfined
     environment:
-      - CUSTOM_USER=$CUSTOM_USER
-      - PASSWORD=$PASSWORD
       - PUID=1000
       - PGID=1000
       - TZ=$TIMEZONE
@@ -61,11 +65,11 @@ services:
       - CHROME_CLI=https://google.com/
     volumes:
       - /root/chromium/config:/config
-    ports:
-      - 3010:3000
-      - 3011:3001
     shm_size: "1gb"
-    restart: always  # Ensures the container restarts on failure
+    ports:
+      - 6901:6901  # VNC/NoVNC access port
+      - 3000:3000  # HTTP port for chromium service (if applicable)
+    restart: unless-stopped
 EOF
 
 if [ ! -f "docker-compose.yaml" ]; then
@@ -74,16 +78,17 @@ if [ ! -f "docker-compose.yaml" ]; then
 fi
 
 echo "Running Chromium container..."
-cd $HOME/chromium
 docker-compose up -d || { echo "Failed to start Docker Compose"; exit 1; }
 
+# Get the public IP of the server
 IPVPS=$(curl -s ifconfig.me)
 
-echo "Access Chromium in your browser at: http://$IPVPS:3010/ or https://$IPVPS:3011/"
+# Display access information
+echo "Access Chromium through your browser via VNC at: http://$IPVPS:6901/"
 echo "Username: $CUSTOM_USER"
 echo "Password: $PASSWORD"
-echo "Please save your data, or you will lose access!"
+echo "You can now browse the web remotely using Chromium!"
 
 # Clean up Docker system
 docker system prune -f
-echo "Docker system pruned. Setup complete! Subscribe: https://t.me/HappyCuanAirdrop"
+echo "Docker system pruned. Setup complete!"
