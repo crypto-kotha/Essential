@@ -5,7 +5,7 @@ from python.helpers import files
 timeout = 30
 
 def initialize():
-    chat_llm = model.get_ddgs_chat(model_name="gpt-4o-mini", temperature=0)
+    chat_llm = models.get_ddgs_chat(model_name="gpt-4o-mini", temperature=0)
     utility_llm = chat_llm
     embedding_llm = models.get_huggingface_embedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
     config = AgentConfig(
