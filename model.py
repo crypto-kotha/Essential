@@ -64,7 +64,7 @@ def get_api_key(service):
 
 # ddgs
 def get_ddgs_chat(model_name:str, temperature=DEFAULT_TEMPERATURE):
-    return what_is return_here? (model=model_name,temperature=temperatur)
+    return AsyncDDGSChat(model=model_name,temperature=temperatur)
 
 def get_huggingface_embedding(model_name:str):
     return HuggingFaceEmbeddings(model_name=model_name)
