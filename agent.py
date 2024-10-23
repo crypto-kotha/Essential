@@ -7,7 +7,7 @@ from python.helpers import extract_tools, rate_limiter, files, errors
 from python.helpers.print_style import PrintStyle
 from langchain.schema import AIMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage, BaseMessage
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.embeddings import Embeddings
