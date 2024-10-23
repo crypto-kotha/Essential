@@ -4,7 +4,6 @@ from duckduckgo_search import AsyncDDGS
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage
 from typing import List, Optional, Any, Dict, Iterator
-from pydantic.v1.types import SecretStr
 from python.helpers.dotenv import load_dotenv
 from langchain_huggingface import HuggingFaceEmbeddings
 
@@ -13,7 +12,7 @@ load_dotenv()
 
 # Configuration
 DEFAULT_TEMPERATURE = 0.0
-
+timeout = 30
 class AsyncDDGSChat(BaseChatModel):
     """
     Adapter class to make AsyncDDGS chat compatible with LangChain's BaseChatModel
