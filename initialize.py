@@ -8,9 +8,9 @@ def initialize():
     embedding_llm = models.get_huggingface_embedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
     config = AgentConfig(
         ddgs_timeout=timeout
-        chat_model=ddgs_chat,
+        chat_model=chat_llm,
         ddgs_model="gpt-4o-mini",
-        utility_model = ddgs_model,
+        utility_model = utility_llm,
         embeddings_model = embedding_llm,
         knowledge_subdirs = ["default","custom"],
         auto_memory_count = 0,
