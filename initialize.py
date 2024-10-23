@@ -2,6 +2,8 @@ import models
 from agent import AgentConfig
 from python.helpers import files
 
+timeout = 30
+
 def initialize():
     chat_llm = model.get_ddgs_chat(model_name="gpt-4o-mini", temperature=0)
     utility_llm = chat_llm
