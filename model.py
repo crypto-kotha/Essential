@@ -17,7 +17,6 @@ class AsyncDDGSChat(BaseChatModel):
     """
     Adapter class to make AsyncDDGS chat compatible with LangChain's BaseChatModel
     """
-    
     def __init__(self, model: str = "gpt-4o-mini", timeout: int = 30):
         super().__init__()
         self.model = model
@@ -63,7 +62,7 @@ def get_api_key(service):
 
 # ddgs
 def get_ddgs_chat(model_name:str, temperature=DEFAULT_TEMPERATURE):
-    return AsyncDDGSChat(model=model_name,temperature=temperatur)
+    return AsyncDDGSChat(model=model_name, temperature=temperature)
 
 def get_huggingface_embedding(model_name:str):
     return HuggingFaceEmbeddings(model_name=model_name)
