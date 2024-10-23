@@ -7,7 +7,7 @@ def initialize():
     utility_llm = chat_llm
     embedding_llm = models.get_huggingface_embedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
     config = AgentConfig(
-        ddgs_timeout=timeout
+        ddgs_timeout=timeout,
         chat_model=chat_llm,
         ddgs_model="gpt-4o-mini",
         utility_model = utility_llm,
