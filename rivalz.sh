@@ -2,12 +2,12 @@
 
 # Script to create a systemd service for running 'rivalz run' on startup
 
-# Step 1: Find the path of the 'rivalz' executable
-RIVALZ_PATH=$(which rivalz)
+# Step 1: Set the path of the 'rivalz' executable directly
+RIVALZ_PATH="/home/ubuntu/.nvm/versions/node/v23.3.0/bin/rivalz"
 
-# Check if 'rivalz' is installed
-if [ -z "$RIVALZ_PATH" ]; then
-    echo "Error: 'rivalz' is not installed or not in the system's PATH."
+# Check if 'rivalz' exists at the specified path
+if [ ! -f "$RIVALZ_PATH" ]; then
+    echo "Error: 'rivalz' is not installed at $RIVALZ_PATH."
     echo "Install it globally with: sudo npm install -g rivalz-node-cli"
     exit 1
 fi
@@ -31,7 +31,7 @@ ExecStart=$RIVALZ_PATH run
 Restart=always
 User=$USER
 WorkingDirectory=$HOME
-Environment="PATH=/usr/bin:/bin:/usr/local/bin"
+Environment="PATH=/usr/bin:/bin:/usr/local/bin:/home/ubuntu/.nvm/versions/node/v23.3.0/bin"
 
 [Install]
 WantedBy=multi-user.target
