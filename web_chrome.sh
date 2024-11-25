@@ -1,117 +1,45 @@
 #!/bin/bash
 
-LOGFILE="$HOME/chromium_setup.log"
+# Error handling and logging
+set -e
+LOG_FILE="$HOME/chromium-setup.log"
 
-function log {
-    echo "$(date '+%a %b %d %H:%M:%S %Z %Y') : $1" | tee -a "$LOGFILE"
+function log() {
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
 }
 
-# Function to handle errors
-function handle_error {
-    log "Error: $1"
+function handle_error() {
+    log "ERROR: $1"
     exit 1
 }
 
-# Function to check and fix Docker daemon
-function fix_docker_daemon {
-    log "Checking Docker daemon configuration..."
-    
-    # Stop Docker service and socket
-    sudo systemctl stop docker.service docker.socket
-    
-    # Create or update daemon.json
-    sudo mkdir -p /etc/docker
-    sudo tee /etc/docker/daemon.json > /dev/null <<EOF
-{
-    "debug": true,
-    "hosts": ["unix:///var/run/docker.sock"]
-}
-EOF
-    
-    # Update Docker service configuration
-    sudo mkdir -p /etc/systemd/system/docker.service.d
-    sudo tee /etc/systemd/system/docker.service.d/override.conf > /dev/null <<EOF
-[Service]
-ExecStart=
-ExecStart=/usr/bin/dockerd --containerd=/run/containerd/containerd.sock
-EOF
-    
-    # Reload systemd and restart Docker
-    sudo systemctl daemon-reload
-    sudo systemctl start docker.socket
-    sudo systemctl start docker.service
-    sudo systemctl enable docker.socket
-    sudo systemctl enable docker.service
-    
-    # Wait for Docker to be ready
-    sleep 5
-    
-    # Verify Docker is running
-    if ! sudo docker info >/dev/null 2>&1; then
-        handle_error "Docker daemon still not running properly after configuration"
-    fi
-    
-    log "Docker daemon configured successfully"
-}
+# Configuration variables
+CUSTOM_USER="Admin"
+PASSWORD="Admin"
+TIMEZONE="Asia/Dhaka"
+CHROMIUM_DIR="$HOME/chromium"
 
-# Clear any existing Chromium Docker container
-log "Stopping and removing existing Chromium container..."
-sudo docker kill chromium &>/dev/null || true
-sudo docker rm chromium &>/dev/null || true
-
-# Install Docker if not installed
-if ! command -v docker &> /dev/null; then
-    log "Docker not found. Installing Docker..."
-    sudo apt update -y && sudo apt upgrade -y || handle_error "Failed to update system packages."
-
-    for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do
-        sudo apt-get remove -y $pkg &>/dev/null || true
+# Function to find next available port
+function find_next_available_port() {
+    local port=$1
+    while nc -z localhost $port 2>/dev/null; do
+        log "Port $port is in use, trying next port..."
+        port=$((port + 1))
     done
+    echo $port
+}
 
-    sudo apt install -y apt-transport-https ca-certificates curl software-properties-common || handle_error "Failed to install dependencies."
+# Setup Chromium with Docker Compose
+function setup_chromium() {
+    log "Setting up Chromium environment..."
+    mkdir -p "$CHROMIUM_DIR"
 
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg || handle_error "Failed to add Docker GPG key."
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    # Find available ports
+    NGINX_PORT=$(find_next_available_port 8081)
+    log "Using port $NGINX_PORT for Nginx"
 
-    sudo apt update -y && sudo apt install -y docker-ce docker-ce-cli containerd.io || handle_error "Failed to install Docker."
-    fix_docker_daemon
-    log "Docker installed successfully."
-else
-    log "Docker is already installed."
-    fix_docker_daemon
-fi
-
-# Ensure current user has Docker permissions
-if ! groups | grep -q docker; then
-    log "Adding current user to Docker group..."
-    sudo usermod -aG docker $USER
-    # Fix socket permissions
-    sudo chmod 666 /var/run/docker.sock
-    log "User added to Docker group. Please log out and log back in for changes to take effect."
-fi
-
-# Install Docker Compose
-log "Installing Docker Compose..."
-sudo curl -L "https://github.com/docker/compose/releases/download/v2.23.0/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-sudo ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
-
-# Get server timezone, default to Etc/UTC if not found
-TIMEZONE=$(timedatectl | grep "Time zone" | awk '{print $3}')
-TIMEZONE=${TIMEZONE:-"Etc/UTC"}
-log "Server timezone set to: $TIMEZONE"
-
-# Set up Chromium with Docker Compose and KasmVNC
-log "Setting up Chromium Docker environment..."
-
-mkdir -p "$HOME/chromium" && cd "$HOME/chromium" || handle_error "Failed to create Chromium directory."
-
-# Customizable environment variables
-CUSTOM_USER="${CUSTOM_USER:-admin}"
-PASSWORD="${PASSWORD:-12345678}"
-
-# Generate docker-compose.yaml file for Chromium and Nginx services
-cat <<EOF > docker-compose.yaml
+    # Create docker-compose.yml for both Chromium and Nginx
+    cat > "$CHROMIUM_DIR/docker-compose.yml" <<EOF
 version: "3.8"
 services:
   chromium:
@@ -120,69 +48,101 @@ services:
     security_opt:
       - seccomp:unconfined
     environment:
-      - VNC_USER=$CUSTOM_USER
-      - VNC_PW=$PASSWORD
-      - PUID=1000
-      - PGID=1000
-      - TZ=$TIMEZONE
-      - LANG=en_US.UTF-8
-      - CHROME_CLI=https://google.com/
+      - VNC_USER=${CUSTOM_USER}
+      - VNC_PW=${PASSWORD}
+      - PUID=$(id -u)
+      - PGID=$(id -g)
+      - TZ=${TIMEZONE}
+      - CHROME_CLI=--no-sandbox
     volumes:
-      - $HOME/chromium/config:/config
-    shm_size: "2gb"
+      - ${CHROMIUM_DIR}/config:/config
     ports:
-      - 6901:6901
+      - "3000:3000"
+      - "127.0.0.1:6901:6901"
     restart: unless-stopped
+    shm_size: "2gb"
+    networks:
+      - chromium_network
 
   nginx:
     image: nginx:latest
-    container_name: chromium_nginx
-    ports:
-      - "8080:8080"
+    container_name: chromium_nginx_new
     volumes:
-      - "$HOME/chromium/nginx.conf:/etc/nginx/nginx.conf:ro"
-      - "$HOME/chromium/.htpasswd:/etc/nginx/.htpasswd:ro"
+      - ${CHROMIUM_DIR}/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ${CHROMIUM_DIR}/.htpasswd:/etc/nginx/.htpasswd:ro
+    ports:
+      - "${NGINX_PORT}:80"
+    depends_on:
+      - chromium
     restart: unless-stopped
+    networks:
+      - chromium_network
+
+networks:
+  chromium_network:
+    name: chromium_network
 EOF
 
-# Create Nginx configuration with WebSocket support
-cat <<EOF > nginx.conf
-events {}
-http {
-    server {
-        listen 8080;
+    # Create Nginx configuration
+    cat > "$CHROMIUM_DIR/nginx.conf" <<EOF
+server {
+    listen 80;
+    server_name _;
 
-        location / {
-            auth_basic "Protected Chromium Access";
-            auth_basic_user_file /etc/nginx/.htpasswd;
+    location / {
+        auth_basic "Restricted Access";
+        auth_basic_user_file /etc/nginx/.htpasswd;
 
-            proxy_pass http://chromium:6901;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade \$http_upgrade;
-            proxy_set_header Connection "upgrade";
-            proxy_set_header Host \$host;
-            proxy_set_header X-Real-IP \$remote_addr;
-            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto \$scheme;
-        }
+        proxy_pass http://chromium:3000/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+
+        # WebSocket support
+        proxy_read_timeout 86400;
+        proxy_redirect off;
     }
 }
 EOF
 
-# Create .htpasswd file for Nginx basic authentication
-sudo apt install -y apache2-utils || handle_error "Failed to install apache2-utils."
-echo "$PASSWORD" | htpasswd -c -i "$HOME/chromium/.htpasswd" "$CUSTOM_USER" || handle_error "Failed to create htpasswd file."
+    # Create .htpasswd file
+    echo "${CUSTOM_USER}:$(openssl passwd -apr1 ${PASSWORD})" > "$CHROMIUM_DIR/.htpasswd"
 
-# Launch the Chromium and Nginx containers
-log "Starting Docker Compose services..."
-docker-compose up -d || handle_error "Failed to start Docker Compose services."
+    # Stop existing containers with the same name
+    docker stop chromium_nginx_new 2>/dev/null || true
+    docker rm chromium_nginx_new 2>/dev/null || true
 
-# Get the public IP of the server
-IPVPS=$(curl -s ifconfig.me)
-log "Access Chromium at http://$IPVPS:8080 with Username: $CUSTOM_USER and Password: $PASSWORD"
+    # Start new containers
+    cd "$CHROMIUM_DIR"
+    docker-compose up -d || handle_error "Failed to start containers"
+}
 
-# Clean up Docker system
-log "Pruning Docker system..."
-docker system prune -f
+# Main execution
+log "Starting Chromium setup with Nginx authentication..."
 
-log "Chromium setup complete!"
+# Check if docker and docker-compose are installed
+if ! command -v docker &>/dev/null; then
+    handle_error "Docker is not installed. Please install Docker first."
+fi
+
+if ! command -v docker-compose &>/dev/null; then
+    handle_error "Docker Compose is not installed. Please install Docker Compose first."
+fi
+
+# Install netcat for port checking
+if ! command -v nc &>/dev/null; then
+    log "Installing netcat for port checking..."
+    sudo apt-get update && sudo apt-get install -y netcat
+fi
+
+setup_chromium
+
+# Get public IP
+PUBLIC_IP=$(curl -s ifconfig.me)
+log "Setup complete! Access your Chromium instance at: http://${PUBLIC_IP}:${NGINX_PORT}/"
+log "Username: ${CUSTOM_USER}"
+log "Password: ${PASSWORD}"
