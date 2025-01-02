@@ -1,0 +1,556 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Homepage</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1e90ff, #ff69b4);
+      color: #fff;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .glass-morphism {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .draggable {
+      position: absolute;
+      cursor: grab;
+      transition: all 0.3s ease;
+      padding: 15px;
+    }
+
+    .draggable:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .draggable:active {
+      cursor: grabbing;
+      transform: scale(0.98);
+    }
+
+    .clock {
+      font-size: 3.5rem;
+      font-weight: 700;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+      text-align: center;
+    }
+
+    .date {
+      font-size: 1.2rem;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .search-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px;
+    }
+
+    .search-bar input {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 25px;
+      width: 300px;
+      font-size: 1.1rem;
+      background: rgba(255, 255, 255, 0.9);
+      transition: all 0.3s ease;
+    }
+
+    .search-bar input:focus {
+      outline: none;
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+      width: 400px;
+    }
+
+    .search-bar button {
+      padding: 12px 25px;
+      border: none;
+      border-radius: 25px;
+      background: #ff69b4;
+      color: #fff;
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: all 0.3s ease;
+    }
+
+    .search-bar button:hover {
+      background: #ff4da6;
+      transform: translateY(-2px);
+    }
+
+    .links {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 15px;
+      padding: 20px;
+      min-width: 100px;
+    }
+
+    .links a {
+      text-decoration: none;
+      color: #fff;
+      font-size: 1.1rem;
+      padding: 15px 20px;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.15);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .links a i {
+      font-size: 1.5rem;
+    }
+
+    .links a:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: translateY(-3px);
+    }
+
+    .weather {
+      padding: 20px;
+      text-align: center;
+      min-width: 250px;
+    }
+
+    .weather i {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+
+    #addPageSection {
+      display: flex;
+      gap: 10px;
+      padding: 15px;
+      align-items: center;
+    }
+
+    #addPageSection input {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    #addPageSection button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      background: #ff69b4;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    #addPageSection button:hover {
+      background: #ff4da6;
+    }
+
+    .todo-list {
+      min-width: 300px;
+      padding: 20px;
+    }
+
+    .todo-list h3 {
+      margin-bottom: 15px;
+    }
+
+    .todo-list ul {
+      list-style: none;
+    }
+
+    .todo-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .todo-list input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+    }
+
+    .completed {
+      text-decoration: line-through;
+      opacity: 0.7;
+    }
+
+    .youtube-widget {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 320px;
+      z-index: 1000;
+    }
+
+    .youtube-container {
+      width: 100%;
+      aspect-ratio: 16/9;
+      margin-bottom: 10px;
+    }
+
+    .youtube-controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      justify-content: center;
+    }
+
+    .youtube-input {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    .youtube-btn {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 4px;
+      background: #ff69b4;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .youtube-btn:hover {
+      background: #ff4da6;
+      transform: translateY(-2px);
+    }
+
+    .youtube-btn i {
+      margin-right: 5px;
+    }
+
+  </style>
+</head>
+
+<body>
+  <div class="weather draggable glass-morphism" id="weather">
+    <i class="fas fa-cloud-sun"></i>
+    <p>Loading weather...</p>
+  </div>
+
+  <div class="clock draggable glass-morphism" id="clock"></div>
+  <div class="date draggable glass-morphism" id="date"></div>
+
+  <div class="search-bar draggable glass-morphism">
+    <input type="search" id="searchInput" placeholder="Search Google...">
+    <button id="searchButton"><i class="fas fa-search"></i> Search</button>
+  </div>
+
+  <div class="links draggable glass-morphism" id="buttonContainer">
+    <a href="https://chat.openai.com" target="_blank">
+      <i class="fas fa-robot"></i>
+      Chat GPT
+    </a>
+    <a href="https://www.youtube.com" target="_blank">
+      <i class="fab fa-youtube"></i>
+      YouTube
+    </a>
+    <a href="https://www.gmail.com" target="_blank">
+      <i class="fas fa-envelope"></i>
+      Gmail
+    </a>
+    <a href="http://account.network3.ai:8080/main" target="_blank">
+      <i class="fas fa-network-wired"></i>
+      Network3
+    </a>
+  </div>
+
+  <section id="addPageSection" class="draggable glass-morphism">
+    <input type="text" id="nameInput" placeholder="Enter a page name">
+    <input type="text" id="urlInput" placeholder="Enter a page URL">
+    <button id="addPageButton"><i class="fas fa-plus"></i> Add Page</button>
+  </section>
+
+
+  <script>
+    document.querySelectorAll('.draggable').forEach(element => {
+      element.addEventListener('mousedown', event => {
+        const startX = event.clientX - element.offsetLeft;
+        const startY = event.clientY - element.offsetTop;
+  
+        function moveAt(pageX, pageY) {
+          element.style.left = pageX - startX + 'px';
+          element.style.top = pageY - startY + 'px';
+        }
+  
+        function onMouseMove(event) {
+          moveAt(event.pageX, event.pageY);
+        }
+  
+        document.addEventListener('mousemove', onMouseMove);
+  
+        element.addEventListener('mouseup', () => {
+          document.removeEventListener('mousemove', onMouseMove);
+          element.onmouseup = null;
+        });
+      });
+  
+      element.ondragstart = () => false; // Disable default drag behavior
+    });
+
+    // YouTube functionality
+    function loadYouTubeVideo() {
+      const input = document.getElementById('youtube-url');
+      let videoId = input.value.trim();
+      
+      // Handle full URLs
+      if (videoId.includes('youtube.com') || videoId.includes('youtu.be')) {
+        // Extract video ID from URL
+        const url = new URL(videoId);
+        if (videoId.includes('youtube.com')) {
+          videoId = url.searchParams.get('v');
+        } else {
+          videoId = url.pathname.slice(1);
+        }
+      }
+
+      if (videoId) {
+        const iframe = document.getElementById('youtube-iframe');
+        iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1`;
+      }
+    }
+
+    // Previous YouTube control functions
+    let isMuted = true;
+    const videos = [
+      'jfKfPfyJRdk',
+      'DWcJFNfaw9c',
+      '5qap5aO4i9A'
+    ];
+    let currentVideoIndex = 0;
+
+    function toggleMute() {
+      const iframe = document.getElementById('youtube-iframe');
+      isMuted = !isMuted;
+      const currentSrc = new URL(iframe.src);
+      currentSrc.searchParams.set('mute', isMuted ? '1' : '0');
+      iframe.src = currentSrc.toString();
+      document.querySelector('.fa-volume-mute').className = isMuted ? 'fas fa-volume-mute' : 'fas fa-volume-up';
+    }
+
+    function changeVideo(direction) {
+      if (direction === 'next') {
+        currentVideoIndex = (currentVideoIndex + 1) % videos.length;
+      } else {
+        currentVideoIndex = (currentVideoIndex - 1 + videos.length) % videos.length;
+      }
+      const iframe = document.getElementById('youtube-iframe');
+      iframe.src = `https://www.youtube.com/embed/${videos[currentVideoIndex]}?autoplay=1&mute=${isMuted ? 1 : 0}`;
+    }
+
+    // Enhanced draggable functionality
+    function makeDraggable(element) {
+      let isDragging = false;
+      let offsetX = 0;
+      let offsetY = 0;
+
+      const savedPosition = JSON.parse(localStorage.getItem(element.id));
+      if (savedPosition) {
+        element.style.left = savedPosition.left;
+        element.style.top = savedPosition.top;
+      }
+
+      element.addEventListener('mousedown', (e) => {
+        if (e.target.tagName.toLowerCase() === 'input') return;
+        isDragging = true;
+        offsetX = e.clientX - element.getBoundingClientRect().left;
+        offsetY = e.clientY - element.getBoundingClientRect().top;
+        element.style.cursor = 'grabbing';
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+          const x = e.clientX - offsetX;
+          const y = e.clientY - offsetY;
+          
+          // Keep element within viewport
+          const maxX = window.innerWidth - element.offsetWidth;
+          const maxY = window.innerHeight - element.offsetHeight;
+          
+          element.style.left = `${Math.min(Math.max(0, x), maxX)}px`;
+          element.style.top = `${Math.min(Math.max(0, y), maxY)}px`;
+        }
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (isDragging) {
+          localStorage.setItem(
+            element.id,
+            JSON.stringify({ left: element.style.left, top: element.style.top })
+          );
+        }
+        isDragging = false;
+        element.style.cursor = 'grab';
+      });
+    }
+
+    // Initialize draggable elements
+    document.querySelectorAll('.draggable').forEach((element) => {
+      element.style.position = 'absolute';
+      makeDraggable(element);
+    });
+
+    // Enhanced clock with smooth updates
+    function updateClock() {
+      const now = new Date();
+      const timeEl = document.getElementById('clock');
+      const dateEl = document.getElementById('date');
+      
+      timeEl.textContent = now.toLocaleTimeString('en-US', { 
+        timeZone: 'Asia/Dhaka',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      
+      dateEl.textContent = now.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Enhanced weather with icons
+    async function getWeather() {
+      const apiKey = 'cbed5804e429dfded32a3518d13f5b0f';
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=Khulna&units=metric&appid=${apiKey}`;
+      const weatherEl = document.getElementById('weather');
+      
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        // Map weather conditions to Font Awesome icons
+        const iconMap = {
+          Clear: 'sun',
+          Clouds: 'cloud',
+          Rain: 'cloud-rain',
+          Snow: 'snowflake',
+          Thunderstorm: 'bolt',
+          Drizzle: 'cloud-rain',
+          Mist: 'smog'
+        };
+        
+        const iconClass = iconMap[data.weather[0].main] || 'cloud';
+        
+        weatherEl.innerHTML = `
+          <i class="fas fa-${iconClass}"></i>
+          <p>${data.name}: ${Math.round(data.main.temp)}°C</p>
+          <p>${data.weather[0].description}</p>
+        `;
+      } catch (error) {
+        weatherEl.innerHTML = `
+          <i class="fas fa-exclamation-triangle"></i>
+          <p>Error fetching weather</p>
+        `;
+      }
+    }
+    getWeather();
+    setInterval(getWeather, 600000); // Update every 10 minutes
+
+    // Search functionality
+    document.getElementById('searchButton').addEventListener('click', () => {
+      const query = document.getElementById('searchInput').value;
+      if (query) {
+        window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+      }
+    });
+
+    document.getElementById('searchInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('searchButton').click();
+      }
+    });
+
+
+    // Add new page functionality
+    document.getElementById('addPageButton').addEventListener('click', () => {
+      const nameInput = document.getElementById('nameInput').value.trim();
+      const urlInput = document.getElementById('urlInput').value.trim();
+
+      if (nameInput && urlInput) {
+        const newLink = document.createElement('a');
+        newLink.href = urlInput;
+        newLink.target = '_blank';
+        newLink.innerHTML = `<i class="fas fa-link"></i> ${nameInput}`;
+        newLink.className = 'glass-morphism';
+        document.getElementById('buttonContainer').appendChild(newLink);
+      } else {
+        alert('Please enter both a name and URL.');
+      }
+    });
+  </script>
+<div class="youtube-widget draggable glass-morphism">
+  <div class="youtube-container">
+    <iframe
+      id="youtube-iframe"
+      width="100%"
+      height="100%"
+      src="https://www.youtube.com/embed/jfKfPfyJRdk?autoplay=1&mute=1"
+      frameborder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen
+    ></iframe>
+  </div>
+
+<div class="youtube-controls">
+    <button class="youtube-btn" onclick="changeVideo('prev')">
+      <i class="fas fa-backward"></i>
+    </button>
+    <button class="youtube-btn" onclick="toggleMute()">
+      <i class="fas fa-volume-mute"></i>
+    </button>
+    <button class="youtube-btn" onclick="changeVideo('next')">
+      <i class="fas fa-forward"></i>
+    </button>
+  </div>
+  <div class="youtube-controls">
+    <input
+      type="text"
+      id="youtube-url"
+      class="youtube-input"
+      placeholder="Enter YouTube URL or video ID"
+    >
+    <button class="youtube-btn" onclick="loadYouTubeVideo()">
+      <i class="fas fa-play"></i>Load
+    </button>
+  </div>
+</div>
+
+</body>
+</html>
