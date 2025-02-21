@@ -1,107 +1,69 @@
 #!/bin/bash
 
-# Update and Upgrade the System
-echo "Updating and upgrading system..."
-sudo apt update && sudo apt upgrade -y
+# Define color codes
+RESET="\e[0m"
+RED="\e[31m"
+GREEN="\e[32m"
+YELLOW="\e[33m"
+BLUE="\e[34m"
+CYAN="\e[36m"
+MAGENTA="\e[35m"
 
-# Install Essentials
-echo "Installing essential packages..."
-sudo apt install -y \
-    build-essential \
-    curl \
-    wget \
-    git \
-    unzip \
-    zip \
-    software-properties-common \
-    apt-transport-https \
-    ca-certificates \
-    gnupg \
-    lsb-release \
-    htop \
-    vim \
-    net-tools \
-    tree \
-    ufw \
-    openssh-server \
-    tmux \
-    gcc \
-    g++ \
-    make \
-    python3 \
-    python3-pip
+# Start of the script
+echo -e "${CYAN}Starting System Upgrade...${RESET}"
 
-# Install Development Tools
-echo "Installing development tools..."
-sudo apt install -y \
-    nodejs \
-    npm \
-    python3-venv
+# Update and upgrade system
+echo -e "${YELLOW}Updating and upgrading the system...${RESET}"
+sudo apt-get update && sudo apt-get -y upgrade && sudo apt -y autoremove
 
-# Install Docker
-echo "Installing Docker..."
-sudo apt remove -y docker docker-engine docker.io containerd runc
-sudo apt update
-sudo apt install -y \
-    docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+# Install Node.js
+echo -e "${YELLOW}Installing Node.js_v20...${RESET}"
+sudo curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 
-# Add user to docker group (optional)
+# Install dependencies
+echo -e "${YELLOW}Installing dependencies...${RESET}"
+sudo apt install -y build-essential curl wget git unzip zip software-properties-common python3 python3-pip nodejs docker-ce docker-ce-cli containerd.io gnupg2 lsb-release apache2-utils ufw ca-certificates zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev curl git wget make jq build-essential pkg-config lsb-release libssl-dev libreadline-dev libffi-dev gcc screen unzip lz4
+
+# Add Docker GPG key
+echo -e "${CYAN}Adding Docker GPG key...${RESET}"
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+# Set up Docker repository
+echo -e "${YELLOW}Setting up Docker repository...${RESET}"
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Add Docker group and user
+echo -e "${CYAN}Adding Docker group and user...${RESET}"
+sudo groupadd docker
 sudo usermod -aG docker $USER
 
-# Install VSCode
-echo "Installing Visual Studio Code..."
-wget -q https://packages.microsoft.com/keys/microsoft.asc -O- | sudo apt-key add -
-sudo add-apt-repository "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main"
-sudo apt update
-sudo apt install -y code
+# Install Docker Compose
+echo -e "${YELLOW}Installing Docker Compose...${RESET}"
+VER=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep tag_name | cut -d '"' -f 4)
+sudo curl -L "https://github.com/docker/compose/releases/download/${VER}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
 
-# Install Node.js and npm (this may be redundant since it's already included above)
-# Uncomment if needed
-# echo "Installing Node.js and npm..."
-# sudo apt install -y nodejs npm
+# Enable and start Docker
+echo -e "${CYAN}Starting Docker...${RESET}"
+sudo systemctl enable docker
+sudo systemctl daemon-reload
+sudo systemctl stop docker
+sudo systemctl start docker
 
-# Install Yarn (Alternative to npm)
-echo "Installing Yarn..."
-curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
-echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
-sudo apt update && sudo apt install -y yarn
+# Install Miniconda
+echo -e "${YELLOW}Installing Miniconda...${RESET}"
+mkdir -p ~/miniconda3
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
+bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
+source ~/miniconda3/bin/activate
+sudo rm ~/miniconda3/miniconda.sh
+conda init --all
 
-# Install Snap and some Snap apps
-echo "Installing Snap and common snap apps..."
-sudo apt install snapd -y
-sudo snap install discord
+# Display versions
+echo -e "${BLUE}Docker version: ${RESET} $(docker --version)"
+echo -e "${BLUE}Docker Compose version: ${RESET} $(docker-compose --version)"
+echo -e "${BLUE}Node.js version: ${RESET} $(node -v)"
+echo -e "${BLUE}Conda version: ${RESET} $(conda --version)"
 
-# Install Chrome Stable
-echo "Installing Google Chrome..."
-wget -q --show-progress --no-check-certificate https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-sudo dpkg -i google-chrome-stable_current_amd64.deb
-sudo apt --fix-broken install -y  # Fix any dependency issues
-rm google-chrome-stable_current_amd64.deb
-
-# Install Advanced Networking Tools
-echo "Installing advanced networking tools..."
-sudo apt install -y \
-    iftop \
-    traceroute \
-    dnsutils \
-    iputils-ping \
-    tcpdump \
-    whois
-
-# Install Firewall management
-echo "Setting up UFW Firewall..."
-sudo ufw allow OpenSSH
-sudo ufw enable
-sudo ufw status
-
-# Install Rust
-echo "Installing Rust programming language..."
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-
-# Clean up
-echo "Cleaning up..."
-sudo apt autoremove -y && sudo apt autoclean -y
-
-# Reboot the system for changes to take effect
-echo "Installation completed. Rebooting system..."
-sudo reboot
+# End of the script
+echo -e "${CYAN}System Upgrade Complete.${RESET}"
