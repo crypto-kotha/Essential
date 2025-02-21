@@ -15,7 +15,6 @@
     "editor.bracketPairColorization.enabled": true,
     "editor.guides.bracketPairs": true,
     "editor.renderWhitespace": "boundary",
-    "editor.rulers": [80, 100, 120],
     
     "workbench.colorTheme": "One Dark Pro",
     "workbench.iconTheme": "material-icon-theme",
